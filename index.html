@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PKN2503407-B</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      overflow-x: hidden;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: #ffffff;
+      color: #111;
+    }
+
+    body.lock {
+      overflow: hidden;
+      height: 100vh;
+      touch-action: none;
+    }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 26px 18px 30px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 22px 0 26px;
+      font-size: 40px;
+      font-weight: 700;
+      color: #555;
+    }
+
+    .sub {
+      font-size: 18px;
+      font-weight: 600;
+      color: #555;
+      line-height: 1.4;
+      margin-bottom: 30px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .thumb {
+      border: 2px solid #bcbcbc;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      cursor: pointer;
+      background: #f5f5f5;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: white;
+      display: none;
+      z-index: 9999;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overlay.show { display: block; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 10;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(6px);
+    }
+
+    .btn {
+      border: 1px solid #ccc;
+      background: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .viewer {
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+
+      width: 100%;
+      display: grid;
+      place-items: center;
+      overflow: visible;
+      user-select: none;
+      box-sizing: border-box;
+      padding: 6px 0 18px;
+
+      /* ✅ 확대 기능 제거: pinch-zoom 없음 */
+      touch-action: pan-y;
+    }
+
+    /* ✅ iOS/Safari 얇은 검은 줄 방지용 래퍼 */
+    .media-wrap{
+      background: #fff;
+      display: inline-block;
+      line-height: 0;
+      overflow: hidden;
+    }
+
+    .media-wrap img,
+    .media-wrap video{
+      display:block;
+      max-width:100%;
+      height:auto;
+      object-fit:contain;
+      pointer-events:auto;
+      -webkit-user-drag:none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+
+    .media-wrap video{
+      background:#fff;
+      width:100%;
+      outline:none;
+      border:0;
+
+      /* 🔥 상/하단 1px 검은 라인 제거 */
+      clip-path: inset(1px 0 1px 0);
+      transform: translateZ(0);
+    }
+
+    @media (max-width: 768px) {
+      .topbar {
+        padding-top: calc(8px + env(safe-area-inset-top));
+        padding-right: 12px;
+        padding-left: 12px;
+        padding-bottom: 8px;
+      }
+
+      .viewer {
+        place-items: start center;
+        padding-top: 8px;
+        padding-bottom: 12px;
+      }
+
+      .btn {
+        padding: 8px 12px;
+        border-radius: 10px;
+      }
+    }
+
+    .tp-logo {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .tp-logo img {
+      width: 44px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>PKN2503407-B</h1>
+
+    <div class="sub">
+      Knit - Scuba<br>
+      Rayon 76% Poly Recycled 16% Span 8%<br>
+      370(g/m²)<br>
+      Piece Dye
+    </div>
+
+    <div class="grid">
+      <div class="thumb" data-type="image" data-src="2.png"><img src="1.png" alt=""></div>
+      <div class="thumb" data-type="image" data-src="4.png"><img src="3.png" alt=""></div>
+
+      <!-- ✅ 5번 png(썸네일) 누르면 6번 mp4 자동재생 -->
+      <div class="thumb" data-type="video" data-src="6.mp4"><img src="5.png" alt=""></div>
+
+      <div class="thumb" data-type="image" data-src="8.png"><img src="7.png" alt=""></div>
+    </div>
+
+    <div class="tp-logo">
+      <img src="./tp-logo.png" alt="TP Logo">
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="topbar">
+      <button class="btn" id="backBtn">← Back</button>
+      <button class="btn" id="closeBtn">Close ✕</button>
+    </div>
+    <div class="viewer" id="viewer"></div>
+  </div>
+
+  <script>
+    const overlay = document.getElementById("overlay");
+    const viewer = document.getElementById("viewer");
+    const thumbs = Array.from(document.querySelectorAll(".thumb"));
+    const backBtn = document.getElementById("backBtn");
+    const closeBtn = document.getElementById("closeBtn");
+
+    let currentIndex = 0;
+
+    function showMedia(index){
+      const n = thumbs.length;
+      currentIndex = ((index % n) + n) % n;
+
+      viewer.innerHTML = "";
+
+      const el = thumbs[currentIndex];
+      const type = el.dataset.type;
+      const src = el.dataset.src;
+
+      const wrap = document.createElement("div");
+      wrap.className = "media-wrap";
+      viewer.appendChild(wrap);
+
+      if(type === "video"){
+        const v = document.createElement("video");
+        v.src = src;
+
+        /* ✅ 자동재생 안정화 세팅 */
+        v.muted = true;         // autoplay 필수
+        v.autoplay = true;
+        v.loop = true;
+        v.playsInline = true;
+        v.controls = false;
+        v.preload = "metadata";
+
+        wrap.appendChild(v);
+
+        // ✅ 클릭(유저 제스처) 직후 재생 시도
+        const p = v.play();
+        if (p && typeof p.catch === "function") p.catch(()=>{});
+      } else {
+        const img = document.createElement("img");
+        img.src = src;
+        wrap.appendChild(img);
+      }
+
+      overlay.scrollTop = 0;
+    }
+
+    function openViewer(i){
+      showMedia(i);
+      overlay.classList.add("show");
+      document.body.classList.add("lock");
+      history.pushState({open:true}, "");
+    }
+
+    function closeViewer(){
+      overlay.classList.remove("show");
+      viewer.innerHTML = "";
+      document.body.classList.remove("lock");
+    }
+
+    function next(){ showMedia(currentIndex + 1); }
+    function prev(){ showMedia(currentIndex - 1); }
+
+    thumbs.forEach((el,i)=> el.addEventListener("click", ()=> openViewer(i)));
+    backBtn.addEventListener("click", ()=> history.back());
+    closeBtn.addEventListener("click", ()=> history.back());
+
+    window.addEventListener("popstate", ()=>{
+      if(overlay.classList.contains("show")) closeViewer();
+    });
+
+    /* ✅ 확대 기능 없음 / 탭으로 좌우 넘김만 유지 */
+    viewer.addEventListener("click",(e)=>{
+      if (!overlay.classList.contains("show")) return;
+      const r = viewer.getBoundingClientRect();
+      (e.clientX - r.left < r.width/2) ? prev() : next();
+    });
+  </script>
+</body>
+</html>
